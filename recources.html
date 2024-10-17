@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Board Game Resource Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            background-color: #f0f0f0;
+            padding: 10px; /* Add padding to body for better appearance */
+        }
+        .resource {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            padding: 15px;
+            text-align: center;
+            width: calc(50% - 20px); /* Two widgets per row with margin */
+            box-sizing: border-box;
+        }
+
+        .resource img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 10%;
+        }
+        .counter {
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="resource">
+        <img src="images\coal.png" alt="Coal">
+        <div class="counter" id="counter1">0</div>
+        
+        <button onclick="updateCounter('counter1', -1)">-</button>
+        <button onclick="updateCounter('counter1', 1)">+</button>
+    </div>
+    <div class="resource">
+        <img src="images\eisen.png" alt="Eisen">
+        <div class="counter" id="counter2">0</div>
+        
+        <button onclick="updateCounter('counter2', -1)">-</button>
+        <button onclick="updateCounter('counter2', 1)">+</button>
+    </div>
+    <div class="resource">
+        <img src="images\holz.png" alt="Holz">
+        <div class="counter" id="counter3">0</div>
+        
+        <button onclick="updateCounter('counter3', -1)">-</button>
+        <button onclick="updateCounter('counter3', 1)">+</button>
+    </div>
+    <div class="resource">
+        <img src="images\weizen.png" alt="Weizen">
+        <div class="counter" id="counter4">0</div>
+
+        <button onclick="updateCounter('counter4', -1)">-</button>
+        <button onclick="updateCounter('counter4', 1)">+</button>
+    </div>
+
+    <div class="resource">
+        <img src="images\marmor.png" alt="Marmor">
+        <div class="counter" id="counter5">0</div>
+        
+        <button onclick="updateCounter('counter5', -1)">-</button>
+        <button onclick="updateCounter('counter5', 1)">+</button>
+    </div>
+
+    <div class="resource">
+        <img src="images\jambur.png" alt="Jambur">
+        <div class="counter" id="counter6">0</div>
+        
+        <button onclick="updateCounter('counter6', -1)">-</button>
+        <button onclick="updateCounter('counter6', 1)">+</button>
+    </div>
+
+    <div class="resource">
+        <img src="images\pulver.png" alt="pulver">
+        <div class="counter" id="counter7">0</div>
+        
+        <button onclick="updateCounter('counter7', -1)">-</button>
+        <button onclick="updateCounter('counter7', 1)">+</button>
+    </div>
+
+   
+    <script>
+       /* function updateCounter(id, change) {
+            const counter = document.getElementById(id);
+            let value = parseInt(counter.innerText) + change;
+            value = Math.max(0, value); // Ensure the value doesn't go below 0
+            counter.innerText = value;
+        }
+            */
+
+       
+        // Function to update the counter
+        function updateCounter(id, change) {
+            const counter = document.getElementById(id);
+            let value = parseInt(counter.innerText) + change;
+            value = Math.max(0, value); // Ensure the value doesn't go below 0
+            counter.innerText = value;
+
+            // Store the updated count in localStorage
+            localStorage.setItem(id, value);
+        }
+
+        // Function to load counts from localStorage
+        function loadCounts() {
+            for (let i = 1; i <= 7; i++) {
+                const counterId = 'counter' + i;
+                const storedValue = localStorage.getItem(counterId);
+                if (storedValue !== null) {
+                    document.getElementById(counterId).innerText = storedValue;
+                }
+            }
+        }
+
+        // Load counts when the page is loaded
+        window.onload = loadCounts;
+    </script>
+    
+</body>
+</html>
