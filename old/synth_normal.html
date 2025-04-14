@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>F Minor Harmonic Synthesizer</title>
+    <title>Tree Position Based Synthesizer</title>
+    <style>
+        body {
+            background: #2C302E;
+            color: #E8E8ED;
+            font-family: monospace, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        #canvas {
+            border: 1px solid #E8E8ED;
+            cursor: crosshair;
+            margin: 20px 0;
+        }
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        button {
+            background: transparent;
+            color: E8E8ED;
+            border: 1px solid E8E8ED;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #00F5AF;
+        }
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        input[type="range"] {
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button id="playButton">Play</button>
+        <div class="slider-container">
+            <label>Distortion: <span id="distortionValue">0</span></label>
+            <input type="range" id="distortion" min="0" max="100" value="0">
+        </div>
+        <div class="slider-container">
+            <label>Note Length (ms): <span id="noteLengthValue">200</span></label>
+            <input type="range" id="noteLength" min="50" max="1000" value="200">
+        </div>
+        <div class="slider-container">
+            <label>Time Between Notes (ms): <span id="timeGapValue">100</span></label>
+            <input type="range" id="timeGap" min="0" max="500" value="100">
+        </div>
+    </div>
+    <canvas id="canvas" width="800" height="400"></canvas>
+
+    <script>
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const points = [];
+        let isPlaying = false;
+        let currentNoteIndex = 0;
+
+        // F minor harmonic scale frequencies
+        const scale = [
+            43.65 ,  // F1
+            49.00,  // G1
+            51.91,  // Ab1
+            58.27,  // bB1
+            65.41 ,  // C1
+            69.30,  // C#1
+            82.41,  // E2
+            87.31    // f
+        ];
+
+        function getFrequencyFromY(y) {
+            const index = Math.floor((1 - y / canvas.height) * scale.length);
+            return scale[Math.max(0, Math.min(scale.length - 1, index))];
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            points.push({ x, y, active: false });
+            drawPoints();
+        });
+
+        function drawPoints() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid lines
+            ctx.strokeStyle = '#1D201F';
+            ctx.beginPath();
+            for (let i = 1; i <= 10; i++) {
+                const y = (i / 10) * canvas.height;
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+            }
+            ctx.stroke();
+
+            points.forEach(point => {
+                // Draw lines for active point
+                if (point.active) {
+                    ctx.strokeStyle = '#00F5AF'; // Green lines for the active point
+                    ctx.beginPath();
+                    ctx.moveTo(point.x, 0); // Vertical line
+                    ctx.lineTo(point.x, canvas.height);
+                    ctx.moveTo(0, point.y); // Horizontal line
+                    ctx.lineTo(canvas.width, point.y);
+                    ctx.stroke();
+                }
+
+                // Draw the point
+                ctx.beginPath();
+                const radius = point.active ? 10 : 5; // Larger radius for active point
+                ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = point.active ? '#00F5AF' : '#E8E8ED'; // Green for active point
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.stroke();
+            });
+        }
+
+        async function playNote(frequency) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const distortion = audioContext.createWaveShaper();
+
+            oscillator.connect(distortion);
+            distortion.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            const distortionAmount = document.getElementById('distortion').value / 100;
+            function makeDistortionCurve(amount) {
+                const k = typeof amount === 'number' ? amount : 50;
+                const samples = 44100;
+                const curve = new Float32Array(samples);
+                for (let i = 0; i < samples; ++i) {
+                    const x = (i * 2 / samples - 1);
+                    curve[i] = (Math.PI + k) * x / (Math.PI + k * Math.abs(x));
+                }
+                return curve;
+            }
+            distortion.curve = makeDistortionCurve(distortionAmount * 400);
+
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+
+            oscillator.start();
+            await new Promise(resolve => setTimeout(resolve, 
+                parseInt(document.getElementById('noteLength').value)));
+            oscillator.stop();
+        }
+
+        async function playSequence() {
+            if (!isPlaying || points.length === 0) return;
+
+            points.forEach(p => p.active = false);
+            points[currentNoteIndex].active = true;
+            drawPoints();
+
+            const frequency = getFrequencyFromY(points[currentNoteIndex].y);
+            await playNote(frequency);
+            
+            points[currentNoteIndex].active = false;
+            drawPoints();
+
+            currentNoteIndex = (currentNoteIndex + 1) % points.length;
+
+            if (isPlaying) {
+                setTimeout(playSequence, parseInt(document.getElementById('timeGap').value));
+            }
+        }
+
+        document.getElementById('playButton').addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            isPlaying = !isPlaying;
+            document.getElementById('playButton').textContent = isPlaying ? 'Pause' : 'Play';
+            
+            if (isPlaying && points.length > 0) {
+                playSequence();
+            }
+        });
+
+        // Update slider values
+        ['distortion', 'noteLength', 'timeGap'].forEach(id => {
+            const slider = document.getElementById(id);
+            const valueDisplay = document.getElementById(id + 'Value');
+            slider.addEventListener('input', () => {
+                valueDisplay.textContent = slider.value;
+            });
+        });
+
+        drawPoints();
+    </script>
+</body>
+</html>

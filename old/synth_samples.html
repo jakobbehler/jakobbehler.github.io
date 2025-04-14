@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tree Empathy - An Electromagnetic Sequencer</title>
+    <h1>Tree Empathy - An Electromagnetic Sequencer</h1>
+    <style>
+        h1 {
+            color: #E8E8ED;
+            font-family: monospace, sans-serif;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        body {
+            background: #1D201F;
+            color: #E8E8ED;
+            font-family: monospace, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin-top: 7%;
+        }
+        #canvas {
+            border: 1px solid #E8E8ED;
+            cursor: crosshair;
+            margin: 40px 0;
+        }
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        button {
+            background: transparent;
+            color: #E8E8ED;
+            border: 1px solid #E8E8ED;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #00F5AF;
+        }
+        #fileInput {
+            color: #E8E8ED;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <input type="file" id="fileInput" multiple accept="audio/*">
+        <button id="playButton" disabled>Play</button>
+    </div>
+    <canvas id="canvas" width="800" height="400"></canvas>
+
+    <script>
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('fileInput');
+        const playButton = document.getElementById('playButton');
+
+        const points = [];
+        let isPlaying = false;
+        let currentNoteIndex = 0;
+        let audioBuffers = [];
+
+        fileInput.addEventListener('change', async (e) => {
+            const files = e.target.files;
+            audioBuffers = [];
+
+            for (let file of files) {
+                const arrayBuffer = await file.arrayBuffer();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                audioBuffers.push(audioBuffer);
+            }
+
+            playButton.disabled = false;
+            console.log(`Loaded ${audioBuffers.length} audio files`);
+        });
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            points.push({ x, y, active: false });
+            
+            // Sort points by x-coordinate to ensure sequencing
+            points.sort((a, b) => a.x - b.x);
+            
+            drawPoints();
+        });
+
+        function drawPoints() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid lines
+            ctx.strokeStyle = '#1D201F';
+            ctx.beginPath();
+            for (let i = 1; i <= 10; i++) {
+                const y = (i / 10) * canvas.height;
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+            }
+            ctx.stroke();
+
+            points.forEach(point => {
+                // Draw lines for active point
+                if (point.active) {
+                    ctx.strokeStyle = '#00F5AF'; // Green lines for the active point
+                    ctx.beginPath();
+                    ctx.moveTo(point.x, 0); // Vertical line
+                    ctx.lineTo(point.x, canvas.height);
+                    ctx.moveTo(0, point.y); // Horizontal line
+                    ctx.lineTo(canvas.width, point.y);
+                    ctx.stroke();
+                }
+
+                // Draw the point
+                ctx.beginPath();
+                const radius = point.active ? 10 : 5; // Larger radius for active point
+                ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = point.active ? '#00F5AF' : '#E8E8ED'; // Green for active point
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.stroke();
+            });
+        }
+
+        async function playSample(buffer) {
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+
+            return new Promise(resolve => {
+                source.onended = resolve;
+                source.start();
+            });
+        }
+
+        async function playSampleSequence() {
+            if (!isPlaying || points.length === 0 || audioBuffers.length === 0) return;
+
+            // Select sample based on Y position (proportionally)
+            const sampleIndex = Math.floor((points[currentNoteIndex].y / canvas.height) * audioBuffers.length);
+
+            points.forEach(p => p.active = false);
+            points[currentNoteIndex].active = true;
+            drawPoints();
+
+            const buffer = audioBuffers[Math.min(sampleIndex, audioBuffers.length - 1)];
+            
+            if (buffer) {
+                await playSample(buffer);
+            }
+
+            points[currentNoteIndex].active = false;
+            drawPoints();
+
+            currentNoteIndex = (currentNoteIndex + 1) % points.length;
+
+            if (isPlaying) {
+                requestAnimationFrame(playSampleSequence);
+            }
+        }
+
+        playButton.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            isPlaying = !isPlaying;
+            playButton.textContent = isPlaying ? 'Pause' : 'Play';
+            
+            if (isPlaying && points.length > 0) {
+                playSampleSequence();
+            }
+        });
+
+        drawPoints();
+    </script>
+</body>
+</html>
