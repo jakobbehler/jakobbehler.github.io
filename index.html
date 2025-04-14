@@ -104,15 +104,20 @@
 
 
 
-    p, h1, h2, h3 {
+    li, span,p, h1, h2, h3 {
       margin-bottom: 1rem;
       line-height: 170%;
     }
 
-    p {
+    li, span, p {
       font-weight: 300;
+    }
+
+    li {
+        margin-left: 1rem;
 
     }
+
     .skill-section span {
       display: block;
       margin-bottom: 0.4rem;
@@ -142,6 +147,44 @@
       padding: var(--card-padding);
       border-radius: 15px;
     }
+
+    .project-layout {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        align-items: flex-start;
+    }
+
+    .column {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        flex: 1 1 45%;
+    }
+
+    .project-img {
+        width: 100%;
+        height: auto;
+        border-radius: 16px;
+        object-fit: cover;
+    }
+
+    @media (max-width: 768px) {
+        .project-layout {
+            flex-direction: column;
+        }
+
+        .column {
+            flex: 1 1 100%;
+        }
+    }   
+
+
+
+
+
+
+
     .dig-deeper {
       display: flex;
       justify-content: center;
@@ -216,34 +259,51 @@
   <div class="project-section">
     <h2>Behler Engineering</h2>
 
-    <div class="project-card orange">
-      <h3>What I built</h3>
-      <p>A full audio engine in C++ using JUCE<br>
-      Dual-band signal chain with custom crossover, compression, and distortion<br>
-      Simple UI with complex parameter mapping handled under the hood<br>
-      I designed the algorithms from scratch. Math-driven, tuned by ear, refined through real use.</p>
-    </div>
-
-    <div class="project-card blue">
-      <h3>Why I built it</h3>
-      <p>I wanted a specific sound of compression and distortion using very minimal UI elements.<br>
-      I didn’t like the vague “analog warmth” in other plugins.<br>
-      <strong>Behler Engineering</strong> is my label for tools I wish existed. Now I make them.</p>
-    </div>
-
-    <div class="project-card dark">
-      <h3>Design & Brand</h3>
-      <p>I designed the interface from scratch in Figma.<br>
-      Every visual responds to what the signal is doing in real time.<br>
-      I built a visual identity that reflects how it sounds: clean, modern, slightly aggressive.<br>
-      The name and UI language are intentionally different from analog clones.<br>
-      Behler Engineering is my personal label for future tools I want to use.</p>
-    </div>
+      <div class="project-layout">
+        <!-- Left column -->
+        <div class="column">
+            <div class="project-card orange">
+                <h3>What I built</h3>
+                <ul>
+                  <li>A full audio engine in C++ using JUCE</li>
+                  <li>Dual-band signal chain with custom crossover, compression, and distortion</li>
+                  <li>Simple UI with complex parameter mapping handled under the hood</li>
+                  <li>I designed the algorithms from scratch. Math-driven, tuned by ear, refined through real use.</li>
+                </ul>
+              </div>
+              <div class="project-card blue">
+                <h3>Why I built it.</h3>
+                <ul>
+                  <li>I wanted a specific sound of compression and distortion using very minimal UI elements</li>
+                  <li>I didn’t like the vague “analog warmth” in other plugins</li>
+                  <li><strong>Behler Engineering is my label for tools I wish existed. Now I make them.</strong></li>
+                </ul>
+              </div>
+        </div>
+      
+        <!-- Right column -->
+        <div class="column">
+          <img src="ui_light.png" alt="UI preview" class="project-img" />
+          <div class="project-card dark">
+            <h3>Design & Brand</h3>
+            <ul>
+              <li>I designed the interface from scratch in Figma</li>
+              <li>Every visual responds to what the signal is doing in real time</li>
+              <li>I built a visual identity that reflects how it sounds: clean, modern, slightly aggressive</li>
+              <li>The name and UI language are intentionally different from analog clones</li>
+              <li>Behler Engineering is my personal label for future tools I want to use</li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
     <div class="dig-deeper">
       <h3>Dig deeper?</h3>
     </div>
   </div>
+
+  
+  
 
   <script>
     function toggleMode() {
